@@ -117,6 +117,8 @@ syn keyword purescriptStructure derive
 syn keyword purescriptStructure instance
   \ nextgroup=purescriptFunction skipwhite
 
+" Highlight the FnWireframe navigation spots
+syn keyword fnWireframe where do let case if
 " Infix
 syn match purescriptInfixKeyword "\<\(infix\|infixl\|infixr\)\>"
 syn match purescriptInfix "^\(infix\|infixl\|infixr\)\>\s\+\([0-9]\+\)\s\+\(type\s\+\)\?\(\S\+\)\s\+as\>"
@@ -156,12 +158,108 @@ syn region purescriptString start=+"+ skip=+\\\\\|\\"+ end=+"+ contains=@Spell
 syn region purescriptMultilineString start=+"""+ end=+"""+ fold contains=@Spell
 
 " Comment
-syn match purescriptLineComment "---*\([^-!#$%&\*\+./<=>\?@\\^|~].*\)\?$" contains=@Spell
+syn match purescriptLineComment "---*\([^-!#$%&\*\+./<=>\?@\\^|~].*\)\?$" contains=@Spell,m4,mbr1
 syn region purescriptBlockComment start="{-" end="-}" fold
   \ contains=purescriptBlockComment,@Spell
 syn cluster purescriptComment contains=purescriptLineComment,purescriptBlockComment,@Spell
 
 syn sync minlines=50
+
+" Show lambda and conceal unicode characters
+" Issue Question: The highlight group does not seem to have an effect here - the Conceal group is used. Would ideally
+" like to color the conceal character differently.
+syntax match Normal '\\\%([^\\]\+→\)\@=' conceal cchar=λ
+syntax match Normal ' \zs\.' conceal cchar=∘
+syntax match Normal ' \zs<\$>' conceal cchar=⫩
+syntax match Normal ' \zs<\*>' conceal cchar=⟐
+syntax match Normal ' \zs>>' conceal cchar=≫
+syntax match Normal ' \zs>>=' conceal cchar=⫦
+syntax match Normal ' \zs\`elem\`' conceal cchar=∈
+syntax match Normal ' \zs\`flipElem\`' conceal cchar=∋
+syntax match Normal ' \zs>=>' conceal cchar=↣
+syntax match Normal ' \zs<=<' conceal cchar=↢
+syntax match Normal ' \zs==' conceal cchar=≡
+syntax match Normal ' \zs<>' conceal cchar=◇
+syntax match Normal ' \zsmempty' conceal cchar=∅
+syntax match Normal ' \zs++' conceal cchar=⧺
+syntax match Normal ' \zs<=' conceal cchar=≤
+syntax match Normal ' \zs>=' conceal cchar=≥
+syntax match Normal '\sInteger' conceal cchar=ℤ
+" Note: How to set up conceal: the following line has the same effect as the line above. The highlightgroup for syntax
+" match seems to have no effect - still uses the Operator highlight?. For matchadd the 'Conceal' group is mandatory.
+" call matchadd('Conceal', ' \zs\.', -1, -1, {'conceal': '∘'})
+
+
+" Example data declaration 1-9: hides the first identifier (the function to be tested)
+" e1_database4 = database4 (Just "eins") 123
+" -- ①  (Just eins) 123
+syntax match InlineTestNum   'e1' conceal cchar=①
+syntax match InlineTestNum   'e2' conceal cchar=②
+syntax match InlineTestNum   'e3' conceal cchar=③
+syntax match InlineTestNum   'e4' conceal cchar=④
+syntax match InlineTestNum   'e5' conceal cchar=⑤
+syntax match InlineTestNum   'e6' conceal cchar=⑥
+syntax match InlineTestIdeSpace '\v_\i+\ze[\)\ ]' conceal cchar= 
+" Notes: The '+' is needed to prevent concealing standalone '_'s
+syntax match InlineTestDecSpace '\v_\i{-}\s\=\ze\s' conceal cchar= 
+
+syntax match InlineTestIdentifier  '\ve\d_\i{-}\ze[\)| ]' contains=InlineTestNum,InlineTestIdeSpace
+" syntax match InlineTestDeclaration '\v^e\d_\i{-}\s\=\s\i{-}\s' contains=InlineTestNum,InlineTestDecSpace
+syntax match InlineTestDeclaration '\v^e\d_\i{-}\s\=\s' contains=InlineTestNum,InlineTestDecSpace
+
+" Assertions:
+" a15__database3 = (snd <$> e1_database4) `flipElem` 123
+" └ (snd <$> ① ) ∋ 123
+syntax match InlineTestAssertDec     '\v^a\d\d_\i{-}\s\=\ze\s' conceal cchar=├
+syntax match InlineTestAssertLastDec '\v^a\d\d__\i{-}\s\=\ze\s' conceal cchar=└
+syntax match InlineTestAssertDecAndTestIdentif  '\v^a\d\d_\i{-}\s\=\se\d\i{-}\ze\s' conceal cchar=├
+
+" syntax match Normal '\v^e1_\S{-}\s\=\s\S{-}\ze\s' conceal cchar=①
+" call matchadd('Conceal', '\v^txe10\s\=\s.{-}\ze\s', 12, -1, {'conceal': '①'})
+" call matchadd('Conceal', 'txe10\s', 12, -1, {'conceal': '①'})
+" -- could do this in a for loop to allow 9 example data sets:
+" call matchadd('Conceal', '\v^txe20\s\=\s.{-}\ze\s', 12, -1, {'conceal': '②'})
+
+" Assertions 1-9:
+" call matchadd('Conceal', '\vtxa\d\d\s\=', 12, -1, {'conceal': '├'})
+" -- if datasource is first symbol, conceal it
+" call matchadd('Conceal', '\vtxa\d\d\s\=\stxe\d\d\s', 12, -1, {'conceal': '├'})
+
+
+" Tools:
+" get syntax group
+" echo synIDattr( synID( line('.'), col('.'), 0), 'name' )
+
+" Markbar -------------------------------
+
+" This will highlight only the "D" ID in this line:
+" [D] file Name
+" syn region markbarHeader start=/^\[/ end=/$/ contains=markbarID
+syn region markbarHeader start=/^|/ end=/$/ contains=markbarID
+syn region markbarID start=/|/hs=s+1 end=/|/he=e-1 contained
+" - "contained" marks that this definition is only used in other groups 
+"   which explicitly reference it in "contains=<groupid>"
+"   It does not match on the root level/ by itself
+
+hi! def link markbarHeader Keyword
+hi! def link markbarID Highlight1
+
+" highlight vimscript comments. avoids triggring a multiline purescript string
+" with prefixed whitespace
+" Issue: Repl output String types are highlighted as vim-comments → temp disable this
+" syn region markbarVimscriptComment1 start=/^\s\+\"\s/ end=/$/
+" syn region markbarVimscriptComment start=/^\"/ end=/$/
+" hi! def link markbarVimscriptComment Comment
+" hi! def link markbarVimscriptComment1 Comment
+
+" highlight markdown comment
+syn region markbarMarkdownHeader start=/^\#\+\s/ end=/$/
+syn region markbarMarkdownComment start=/^>/ end=/$/
+hi! def link markbarMarkdownHeader Title
+hi! def link markbarMarkdownComment Comment
+
+
+" Markbar -------------------------------
 
 " highlight links
 highlight def link purescriptModule Include
