@@ -34,7 +34,7 @@ syn region purescriptTypeExport matchgroup=purescriptType start="\<[A-Z]\(\S\&[^
 syn match purescriptConstructor "\%(\<class\s\+\)\@15<!\<\u\w*\>"
 syn region purescriptConstructorDecl matchgroup=purescriptConstructor start="\<[A-Z]\w*\>" end="\(|\|$\)"me=e-1,re=e-1 contained
   \ containedin=purescriptData,purescriptNewtype
-  \ contains=purescriptType,purescriptTypeVar,purescriptDelimiter,purescriptOperatorType,purescriptOperatorTypeSig,@purescriptComment
+  \ contains=hsTypeColon,purescriptType,purescriptTypeVar,purescriptDelimiter,purescriptOperatorType,purescriptOperatorTypeSig,@purescriptComment
 
 
 " Function:
