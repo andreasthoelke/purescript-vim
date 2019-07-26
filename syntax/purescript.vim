@@ -30,6 +30,12 @@ syn match purescriptTypeVar "\<[_a-z]\(\w\|\'\)*\>" contained
 syn region purescriptTypeExport matchgroup=purescriptType start="\<[A-Z]\(\S\&[^,.]\)*\>("rs=e-1 matchgroup=purescriptDelimiter end=")" contained extend
   \ contains=hsArrow,hsInteger,purescriptConstructor,purescriptDelimiter
 
+syn match hsTypeComment "\<[_A-Z]\(\w\|\'\)*\>" contained
+      \ containedin=hsFunctionDeclComment
+syn match hsTypeVarComment "\<[_a-z]\(\w\|\'\)*\>" contained
+      \ containedin=hsFunctionDeclComment
+
+
 " Constructor:
 syn match purescriptConstructor "\%(\<class\s\+\)\@15<!\<\u\w*\>"
 syn region purescriptConstructorDecl matchgroup=purescriptConstructor start="\<[A-Z]\w*\>" end="\(|\|$\)"me=e-1,re=e-1 contained
@@ -95,7 +101,7 @@ syn match purescriptImportHiding "hiding"
 syn region purescriptFunctionDecl
   \ excludenl start="^\z(\s*\)\(\(foreign\s\+import\)\_s\+\)\?[_a-z]\(\w\|\'\)*\_s\{-}\(::\|∷\)"
   \ end="^\z1\=\S"me=s-1,re=s-1 keepend
-  \ contains=hsInteger,hsForall,hsArrow,hsConstraintArrow,hsTypeColon,purescriptFunctionDeclStart,purescriptForall,purescriptOperatorType,purescriptOperatorTypeSig,purescriptType,purescriptTypeVar,purescriptDelimiter,@purescriptComment
+  \ contains=concealedTLbindType,hsInteger,hsForall,hsArrow,hsConstraintArrow,hsTypeColon,purescriptFunctionDeclStart,purescriptForall,purescriptOperatorType,purescriptOperatorTypeSig,purescriptType,purescriptTypeVar,purescriptDelimiter,@purescriptComment
 syn region purescriptFunctionDecl
   \ excludenl start="^\z(\s*\)where\z(\s\+\)[_a-z]\(\w\|\'\)*\_s\{-}\(::\|∷\)"
   \ end="^\(\z1\s\{5}\z2\)\=\S"me=s-1,re=s-1 keepend
@@ -108,6 +114,10 @@ syn match purescriptFunctionDeclStart "^\s*\(\(foreign\s\+import\|let\|where\)\_
   \ contains=hsInteger,hsTypeColon,hsArrow,purescriptImportKeyword,purescriptWhere,purescriptLet,purescriptFunction,purescriptOperatorType
 " syn keyword purescriptForall forall
 " syn match purescriptForall "∀"
+
+syn region hsFunctionDeclComment
+      \ excludenl start="\(::\|∷\)"
+      \ end="$"me=s-1,re=s-1 keepend contains=hsConstraintArrow,hsTypeColon,hsArrow,hsTypeVarComment,hsTypeComment
 
 " Keywords:
 syn keyword purescriptConditional if then else
@@ -161,7 +171,7 @@ syn region purescriptString start=+"+ skip=+\\\\\|\\"+ end=+"+ contains=@Spell
 syn region purescriptMultilineString start=+"""+ end=+"""+ fold contains=@Spell
 
 " Comment:
-syn match purescriptLineComment "---*\([^-!#$%&\*\+./<=>\?@\\^|~].*\)\?$" contains=@Spell,m4,mbr1
+syn match purescriptLineComment "---*\([^-!#$%&\*\+./<=>\?@\\^|~].*\)\?$" contains=@Spell,concealedTLbindInComment,concealedTLbindTypeInComment,m4,mbr1
 syn region purescriptBlockComment start="{-" end="-}" fold
   \ contains=purescriptBlockComment,@Spell
 syn cluster purescriptComment contains=purescriptLineComment,purescriptBlockComment,@Spell
@@ -265,6 +275,21 @@ syntax match InlineTestAssertDecAndTestIdentif  '\v^a\d\d_\i{-}\s\=\se\d\i{-}\ze
 
 " ─^  Inline Tests conceals                              ▲
 
+" ─   Concealed TL-Binds                                 ■
+
+" syntax match concealedTLbind '\v^cb\i\i\d\s(::|\=)\s' contained conceal
+syntax match concealedTLbindType '\v^cb\i\i\d\s::\s' contained conceal
+" syntax match concealedTLbindType '\v^(--\s)?cb\i\i\d\s::\s' contained contains=hsFunctionDeclComment conceal
+syntax match concealedTLbindTypeInComment '\v^--\scb\i\i\d\s::\s' contained contains=hsFunctionDeclComment conceal
+syntax match concealedTLbind '\v^cb\i\i\d\s\=\s' conceal
+syntax match concealedTLbindInComment '\v^(--\s)?cb\i\i\d\s\=\s' contained conceal
+
+syntax match concealHlintComment '\v\{-\sHLINT.{-}-\}' conceal cchar=␣
+" Test/Example: (uncomment to see the conceal)
+" cbkt0 = sortBy compare [9,3,5,1,7] {- HLINT ignore cbkt0 -}
+
+" ─^  Concealed Bindings                                 ▲
+
 
 " Tools:
 " get syntax group
@@ -339,6 +364,7 @@ highlight def link purescriptMultilineString String
 
 highlight def link purescriptLineComment purescriptComment
 highlight def link purescriptBlockComment purescriptComment
+highlight def link hsFunctionDeclComment purescriptComment
 
 " purescript general highlights
 highlight def link purescriptClass purescriptKeyword
@@ -351,5 +377,8 @@ highlight def link purescriptOperator Operator
 highlight def link purescriptFunction Function
 highlight def link purescriptType Type
 highlight def link purescriptComment Comment
+
+" has no effect!?
+" highlight def link hsArrow Comment
 
 let b:current_syntax = "purescript"
