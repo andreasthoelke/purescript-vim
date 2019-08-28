@@ -205,7 +205,8 @@ syntax match hsForall               '\s\zsforall' conceal cchar=∀
 " Show lambda and conceal unicode characters
 " Issue Question: The highlight group does not seem to have an effect here - the Conceal group is used. Would ideally
 " like to color the conceal character differently.
-syntax match Normal '\\\%([^\\]\+→\)\@=' conceal cchar=λ
+" syntax match Normal '\\\%([^\\]\+->\)\@=' conceal cchar=λ
+syntax match Normal '\\\%([^\\]\+\)\@=' conceal cchar=λ
 syntax match Normal ' \zs\.' conceal cchar=∘
 syntax match Normal ' \zs<\$>' conceal cchar=⫩
 syntax match Normal ' \zs<\*>' conceal cchar=⟐
@@ -215,8 +216,13 @@ syntax match Normal ' \zs\`elem\`' conceal cchar=∈
 syntax match Normal ' \zs\`flipElem\`' conceal cchar=∋
 syntax match Normal ' \zs>=>' conceal cchar=↣
 syntax match Normal ' \zs<=<' conceal cchar=↢
-syntax match Normal ' \zs==' conceal cchar=≡
-syntax match Normal ' \zs<>' conceal cchar=◇
+" syntax match Normal ' \zs==' conceal cchar=≡
+syntax match Normal '==\ze ' conceal cchar=≡
+" syntax match Normal ' \zs/=' conceal cchar=≠
+syntax match Normal '/=\ze ' conceal cchar=≠
+" To allow filter (== 4) [1,2]
+" syntax match Normal ' \zs<>' conceal cchar=◇
+syntax match Normal '<>\ze ' conceal cchar=◇
 syntax match Normal ' \zsmempty' conceal cchar=∅
 syntax match Normal ' \zs++' conceal cchar=⧺
 syntax match Normal ' \zs<=' conceal cchar=≤
@@ -281,7 +287,13 @@ syntax match InlineTestAssertDecAndTestIdentif  '\v^a\d\d_\i{-}\s\=\se\d\i{-}\ze
 syntax match concealedTLbindType '\v^cb\i\i\d\s::\s' contained conceal
 " syntax match concealedTLbindType '\v^(--\s)?cb\i\i\d\s::\s' contained contains=hsFunctionDeclComment conceal
 syntax match concealedTLbindTypeInComment '\v^--\scb\i\i\d\s::\s' contained contains=hsFunctionDeclComment conceal
-syntax match concealedTLbind '\v^cb\i\i\d\s\=\s' conceal
+
+" This allowed only identifier chars '\i' in the arguments to a function
+" syntax match concealedTLbind '\v^(--\s)?cb\i\i\d\s\ze(\i+\s)*\=' conceal
+" This also allows pattern matching, e.g. cbyi0 (C {a = a, b = b, c = c, d = d}) = a + b + c + d
+syntax match concealedTLbind '\v^(--\s)?cb\i\i\d\s\ze([(),={}a-zA-Z0-9]+\s)*\=' conceal
+" This specifies all chars that are allowed in function" args [(),={}a-zA-Z0-9]
+
 syntax match concealedTLbindInComment '\v^(--\s)?cb\i\i\d\s\=\s' contained conceal
 
 syntax match concealHlintComment '\v\{-\sHLINT.{-}-\}' conceal cchar=␣
